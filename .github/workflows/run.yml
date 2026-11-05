@@ -38,7 +38,19 @@ jobs:
           echo "${{ steps.checkin.outputs.points }}"
           
       - name: 发送 Server酱 通知
+        # 只在全部成功时发"成功"，有失败发"失败"；也可按需改成只在失败时发
+        if: always()
         run: |
-         curl -sS -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_SENDKEY }}.send" \
-           -d "title=构建失败 ${{ github.repository }}" \
-           -d "desp=分支 ${{ github.ref_name }}，提交 ${{ github.sha }}，详情 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }},notify:${{ secrets.NOTIFY }}"
+          if [ -z "${{ secrets.SERVERCHAN_SENDKEY }}" ]; then
+            echo "未配置 SERVERCHAN_SENDKEY，跳过"; exit 0
+          fi
+          SUCCESS="${{ steps.checkin.outputs.success }}"
+          FAIL="${{ steps.checkin.outputs.fail }}"
+          if [ "$FAIL" -gt 0 ] 2>/dev/null; then
+            TITLE="签到失败($FAIL失败)"
+          else
+            TITLE="签到成功($SUCCESS成功)"
+          fi
+          curl -sS -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_SENDKEY }}.send" \
+            -d "title=${TITLE} ${{ github.repository }}" \
+            -d "desp=成功 $SUCCESS / 失败 $FAIL，详情 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
