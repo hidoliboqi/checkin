@@ -30,7 +30,6 @@ jobs:
           DOMAIN: ${{ secrets.DOMAIN }}
           NOTIFY: ${{ secrets.NOTIFY }}
       - name: 发送 Server酱 通知
-        if: failure() # 仅在之前的步骤失败时运行
         run: |
          curl -sS -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_SENDKEY }}.send" \
            -d "title=构建失败 ${{ github.repository }}" \
