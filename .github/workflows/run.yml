@@ -1,58 +1,30 @@
-name: run
+name: Keep GitHub Actions Active
 
 on:
-  workflow_dispatch:
-  push:
   schedule:
-    - cron: 10 16 * * *
+    - cron: "0 1 1 * *"   # 每月1号 UTC 01:00 自动执行
+  workflow_dispatch:      # 可以手动执行一次
+
+permissions:
+  contents: write
 
 jobs:
-  run:
+  keepalive:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - run: npm ci
-      - run: npm run main
-        env:
-          GLADOS: ${{ secrets.GLADOS }}
-          GLADOS_UA: ${{ secrets.GLADOS_UA }}
-          # 多账号：在仓库 Secrets 里按需新增 GLADOS2 / GLADOS3 / …… 即可，
-          # 未配置时值为空字符串，脚本会自动跳过，不影响原有账号。
-          GLADOS2: ${{ secrets.GLADOS2 }}
-          GLADOS_UA2: ${{ secrets.GLADOS_UA2 }}
-          GLADOS2_UA: ${{ secrets.GLADOS2_UA }}
-          GLADOS3: ${{ secrets.GLADOS3 }}
-          GLADOS_UA3: ${{ secrets.GLADOS_UA3 }}
-          GLADOS3_UA: ${{ secrets.GLADOS3_UA }}
-          DOMAIN: ${{ secrets.DOMAIN }}
-          NOTIFY: ${{ secrets.NOTIFY }}
-      - name: 读取签到状态
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update keepalive timestamp
         run: |
-          echo "成功: ${{ steps.checkin.outputs.success }}"
-          echo "失败: ${{ steps.checkin.outputs.fail }}"
-          echo "总计: ${{ steps.checkin.outputs.total }}"
-          echo "积分汇总:"
-          echo "${{ steps.checkin.outputs.points }}"
-          
-      - name: 发送 Server酱 通知
-        # 只在全部成功时发"成功"，有失败发"失败"；也可按需改成只在失败时发
-        if: always()
+          mkdir -p .github
+          echo "Last keepalive: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > .github/keepalive.txt
+
+      - name: Commit and push changes
         run: |
-          if [ -z "${{ secrets.SERVERCHAN_SENDKEY }}" ]; then
-            echo "未配置 SERVERCHAN_SENDKEY，跳过"; exit 0
-          fi
-          SUCCESS="${{ steps.checkin.outputs.success }}"
-          FAIL="${{ steps.checkin.outputs.fail }}"
-          if [ "$FAIL" -gt 0 ] 2>/dev/null; then
-            TITLE="签到失败($FAIL失败)"
-          else
-            TITLE="签到成功($SUCCESS成功)"
-          fi
-          curl -sS -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_SENDKEY }}.send" \
-            -d "title=${TITLE} ${{ github.repository }}" \
-            -d "desp=成功 $SUCCESS / 失败 $FAIL，详情 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive.txt
+          git commit -m "chore: keep actions active" || exit 0
+          git push
