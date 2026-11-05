@@ -33,4 +33,4 @@ jobs:
         run: |
          curl -sS -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_SENDKEY }}.send" \
            -d "title=构建失败 ${{ github.repository }}" \
-           -d "desp=分支 ${{ github.ref_name }}，提交 ${{ github.sha }}，详情 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+           -d "desp=分支 ${{ github.ref_name }}，提交 ${{ github.sha }}，详情 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"+${{ console:log }}
