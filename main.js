@@ -304,7 +304,7 @@ const glados = async () => {
   console.log('===================================')
   console.log('\n========== 签到任务处理完成 ==========')
   console.log(`📊 统计结果：成功 ${successCount} 个 | 失败 ${failCount} 个`)
-  return { notice, successCount, failCount, pointsSummary }
+  return notice
 }
 
 // ========== 通知推送模块 ==========
@@ -457,35 +457,10 @@ const notify = async (notice) => {
 
 // ========== 主入口 ==========
 const main = async () => {
-  const { notice, successCount, failCount, pointsSummary } = await glados()
+  const notice = await glados()
   await notify(notice)
-
-  // —— 关键：把结果写入 GITHUB_OUTPUT，供后续 step 读取 ——
-  const outFile = process.env.GITHUB_OUTPUT
-  if (outFile) {
-    const fs = require('fs')
-    fs.appendFileSync(outFile, `success=${successCount}\n`)
-    fs.appendFileSync(outFile, `fail=${failCount}\n`)
-    fs.appendFileSync(outFile, `total=${successCount + failCount}\n`)
-    // 多行积分汇总
-    fs.appendFileSync(outFile, `points<<EOF\n${pointsSummary.join('\n')}\nEOF\n`)
+  console.log('\n🎉 全部任务执行完毕')
 }
-
-  // —— 同时写入 Job Summary，页面直接可见 ——
-  const summaryFile = process.env.GITHUB_STEP_SUMMARY
-  if (summaryFile) {
-    const fs = require('fs')
-    const lines = [
-      '## GLaDOS 签到结果',
-      '',
-      `- 成功：**${successCount}**`,
-      `- 失败：**${failCount}**`,
-      '',
-      '### 各账号积分',
-      ...pointsSummary.map((p) => `- ${p}`),
-    ]
-    fs.appendFileSync(summaryFile, lines.join('\n') + '\n')
-  }
 
 // 全局错误捕获，避免程序静默失败
 main().catch((err) => {
