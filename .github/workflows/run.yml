@@ -29,6 +29,14 @@ jobs:
           GLADOS3_UA: ${{ secrets.GLADOS3_UA }}
           DOMAIN: ${{ secrets.DOMAIN }}
           NOTIFY: ${{ secrets.NOTIFY }}
+      - name: 读取签到状态
+        run: |
+          echo "成功: ${{ steps.checkin.outputs.success }}"
+          echo "失败: ${{ steps.checkin.outputs.fail }}"
+          echo "总计: ${{ steps.checkin.outputs.total }}"
+          echo "积分汇总:"
+          echo "${{ steps.checkin.outputs.points }}"
+          
       - name: 发送 Server酱 通知
         run: |
          curl -sS -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_SENDKEY }}.send" \
